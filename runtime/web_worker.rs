@@ -299,6 +299,7 @@ impl WebWorker {
       deno_web::init(options.blob_store.clone(), Some(main_module.clone())),
       deno_fetch::init::<Permissions>(
         options.user_agent.clone(),
+        None,
         options.ca_data.clone(),
         None,
       ),

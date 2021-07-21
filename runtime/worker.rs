@@ -99,6 +99,7 @@ impl MainWorker {
       deno_web::init(options.blob_store.clone(), options.location.clone()),
       deno_fetch::init::<Permissions>(
         options.user_agent.clone(),
+        None,
         options.ca_data.clone(),
         None,
       ),
