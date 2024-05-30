@@ -236,6 +236,8 @@ pub fn create_client_config(
     TlsKeys::Resolver(_) => unimplemented!(),
   };
 
+  client.key_log = Arc::new(rustls::KeyLogFile::new());
+
   add_alpn(&mut client, socket_use);
   Ok(client)
 }

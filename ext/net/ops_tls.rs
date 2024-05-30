@@ -31,6 +31,7 @@ use deno_tls::create_client_config;
 use deno_tls::load_certs;
 use deno_tls::load_private_keys;
 use deno_tls::new_resolver;
+use deno_tls::rustls;
 use deno_tls::rustls::Certificate;
 use deno_tls::rustls::ClientConnection;
 use deno_tls::rustls::PrivateKey;
@@ -442,6 +443,8 @@ where
     key_pair.take(),
     SocketUse::GeneralSsl,
   )?;
+
+  tls_config.key_log = Arc::new(rustls::KeyLogFile::new());
 
   if let Some(alpn_protocols) = args.alpn_protocols {
     tls_config.alpn_protocols =

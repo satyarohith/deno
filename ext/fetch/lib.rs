@@ -39,6 +39,7 @@ use deno_core::OpState;
 use deno_core::RcRef;
 use deno_core::Resource;
 use deno_core::ResourceId;
+use deno_tls::rustls;
 use deno_tls::rustls::RootCertStore;
 use deno_tls::Proxy;
 use deno_tls::RootCertStoreProvider;
@@ -918,6 +919,8 @@ pub fn create_http_client(
     options.client_cert_chain_and_key.into(),
     deno_tls::SocketUse::Http,
   )?;
+
+  tls_config.key_log = Arc::new(rustls::KeyLogFile::new());
 
   let mut alpn_protocols = vec![];
   if options.http2 {
