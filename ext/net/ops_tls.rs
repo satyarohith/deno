@@ -179,7 +179,7 @@ pub struct ConnectTlsArgs {
   server_name: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StartTlsArgs {
   rid: ResourceId,
@@ -260,6 +260,7 @@ pub fn op_tls_start<NP>(
 where
   NP: NetPermissions + 'static,
 {
+  eprintln!("ops_tls_start: args: {:?}", args);
   let rid = args.rid;
   let hostname = match &*args.hostname {
     "" => "localhost".to_string(),
@@ -336,6 +337,8 @@ where
       .resource_table
       .add(TlsStreamResource::new(tls_stream.into_split()))
   };
+
+  println!("op_tls_start: rid: {}", rid);
 
   Ok((rid, IpAddr::from(local_addr), IpAddr::from(remote_addr)))
 }
@@ -553,6 +556,7 @@ pub async fn op_tls_handshake(
   state: Rc<RefCell<OpState>>,
   #[smi] rid: ResourceId,
 ) -> Result<TlsHandshakeInfo, NetError> {
+  println!("op_tls_handshake: {rid}");
   let resource = state
     .borrow()
     .resource_table

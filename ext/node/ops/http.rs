@@ -100,6 +100,7 @@ pub async fn op_node_http_request_with_conn<P>(
 where
   P: crate::NodePermissions + 'static,
 {
+  println!("op_node_http_request_with_conn start");
   let (_handle, mut sender) = if encrypted {
     let resource_rc = state
       .borrow_mut()
@@ -107,6 +108,7 @@ where
       .take::<TlsStreamResource>(conn_rid)?;
     let resource = Rc::try_unwrap(resource_rc)
       .map_err(|_e| bad_resource("TLS stream is currently in use"));
+    println!("tls: resource: {:?}", resource);
     let resource = resource?;
     let (read_half, write_half) = resource.into_inner();
     let tcp_stream = read_half.unsplit(write_half);
@@ -126,6 +128,7 @@ where
       .take::<TcpStreamResource>(conn_rid)?;
     let resource = Rc::try_unwrap(resource_rc)
       .map_err(|_| bad_resource("TCP stream is currently in use"));
+    println!("tcp: resource: {:?}", resource);
     let resource = resource?;
     let (read_half, write_half) = resource.into_inner();
     let tcp_stream = read_half.reunite(write_half)?;
@@ -141,6 +144,7 @@ where
       sender,
     )
   };
+  println!("op_node_http_request_with_conn handle: {_handle:?}");
 
   // Create the request.
   let method = Method::from_bytes(&method)?;
@@ -215,6 +219,8 @@ where
       response: res,
       url: url.clone(),
     });
+
+  println!("op_node_http_request_with_conn done");
 
   Ok(rid)
 }

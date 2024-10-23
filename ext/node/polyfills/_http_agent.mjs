@@ -220,6 +220,7 @@ Agent.prototype.addRequest = function addRequest(
   port, /* legacy */
   localAddress, /* legacy */
 ) {
+  debug("addRequest invoked");
   // Legacy API: addRequest(req, host, port, localAddress)
   if (typeof options === "string") {
     options = {
@@ -274,8 +275,10 @@ Agent.prototype.addRequest = function addRequest(
     // If we are under maxSockets create a new one.
     this.createSocket(req, options, (err, socket) => {
       if (err) {
+        debug("err req.onSocket()", err);
         req.onSocket(socket, err);
       } else {
+        debug("set request socket");
         setRequestSocket(this, req, socket);
       }
     });

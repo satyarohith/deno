@@ -68,6 +68,11 @@ import { resourceForReadableStream } from "ext:deno_web/06_streams.js";
 import { UpgradedConn } from "ext:deno_net/01_net.js";
 import { STATUS_CODES } from "node:_http_server";
 import { methods as METHODS } from "node:_http_common";
+import { debuglog } from "ext:deno_node/internal/util/debuglog.ts";
+
+let debug = debuglog("http", (fn) => {
+  debug = fn;
+});
 
 const { ArrayIsArray, StringPrototypeToLowerCase } = primordials;
 
@@ -451,7 +456,9 @@ class ClientRequest extends OutgoingMessage {
       try {
         const parsedUrl = new URL(url);
         let baseConnRid = this.socket.rid;
-        if (this._encrypted) {
+        debug("encrypted", this.socket.encrypted, this._encrypted);
+        if (!this.socket?.encrypted && this._encrypted) {
+          console.log("op_tls_start invoked in writeHeader()", this.socket.rid);
           [baseConnRid] = op_tls_start({
             rid: this.socket.rid,
             hostname: parsedUrl.hostname,
@@ -459,12 +466,13 @@ class ClientRequest extends OutgoingMessage {
             alpnProtocols: ["http/1.0", "http/1.1"],
           });
         }
+        debug("op_node_http_request_with_conn", baseConnRid, this._encrypted);
         const rid = await op_node_http_request_with_conn(
           this.method,
           url,
           headers,
           this._bodyWriteRid,
-          baseConnRid,
+          baseConnRid + 1,
           this._encrypted,
         );
         // Emit request ready to let the request body to be written.
@@ -540,6 +548,7 @@ class ClientRequest extends OutgoingMessage {
           this.emit("response", incoming);
         }
       } catch (err) {
+        debug("err", err);
         if (this._requestSendError !== undefined) {
           // if the request body stream errored, we want to propagate that error
           // instead of the original error from opFetchSend
@@ -614,9 +623,18 @@ class ClientRequest extends OutgoingMessage {
 
         _destroy(req, err || req[kError]);
       } else {
-        // Note: this code is specific to deno to initiate a request.
-        socket.on("connect", () => {
-          // Flush the internal buffers once socket is ready.
+        this.socket = socket;
+        this.emit("socket", socket);
+        debug("socket", socket.connecting, socket.rid);
+        if (socket.connecting === false) {
+          this._flushHeaders();
+          this.once("requestReady", () => {
+            this._flushBuffer();
+          });
+        } else {
+          // Note: this code is specific to deno to initiate a request.
+          socket.on("connect", () => {
+            // Flush the internal buffers once socket is ready.
           // Note: the order is important, as the headers flush
           // sets up the request.
           this._flushHeaders();
@@ -624,8 +642,7 @@ class ClientRequest extends OutgoingMessage {
             this._flushBuffer();
           });
         });
-        this.socket = socket;
-        this.emit("socket", socket);
+      }
         // tickOnSocket(req, socket);
         // req._flush();
       }

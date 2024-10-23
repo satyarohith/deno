@@ -60,6 +60,7 @@ function onConnectEnd(this: any) {
 }
 
 export class TLSSocket extends net.Socket {
+  encrypted: boolean;
   _tlsOptions: any;
   _secureEstablished: boolean;
   _securePending: boolean;
@@ -78,6 +79,7 @@ export class TLSSocket extends net.Socket {
   ssl: any;
 
   _start() {
+    console.trace("_start invoked");
     this[kHandle].afterConnect();
   }
 
@@ -106,6 +108,7 @@ export class TLSSocket extends net.Socket {
     if (socket) {
       this._parent = socket;
     }
+    this.encrypted = true;
     this._tlsOptions = tlsOptions;
     this._secureEstablished = false;
     this._securePending = false;
@@ -150,11 +153,18 @@ export class TLSSocket extends net.Socket {
       const afterConnect = handle.afterConnect;
       handle.afterConnect = async (req: any, status: number) => {
         try {
-          const conn = await Deno.startTls(handle[kStreamBaseField], options);
-          handle[kStreamBaseField] = conn;
-          tlssock.emit("secure");
-          tlssock.removeListener("end", onConnectEnd);
-        } catch {
+          const isTcp = typeof handle[kStreamBaseField]?.handshake !== "function";
+          debug("isTcp", isTcp);
+          if (isTcp) {
+            console.trace("rid before startTls", handle[kStreamBaseField]);
+            const conn = await Deno.startTls(handle[kStreamBaseField], options);
+            handle[kStreamBaseField] = conn;
+            debug("rid after startTls", handle[kStreamBaseField]);
+            tlssock.emit("secure");
+            tlssock.removeListener("end", onConnectEnd);
+          }
+        } catch (err) {
+          debug("err from afterConnect", err);
           // TODO(kt3k): Handle this
         }
         return afterConnect.call(handle, req, status);

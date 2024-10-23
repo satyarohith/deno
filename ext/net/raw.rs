@@ -326,6 +326,7 @@ pub fn take_network_stream_resource(
   resource_table: &mut ResourceTable,
   stream_rid: ResourceId,
 ) -> Result<NetworkStream, AnyError> {
+  println!("take_network_stream_resource_invoked: {stream_rid}");
   // The stream we're attempting to unwrap may be in use somewhere else. If that's the case, we cannot proceed
   // with the process of unwrapping this connection, so we just return a bad resource error.
   // See also: https://github.com/denoland/deno/pull/16242
